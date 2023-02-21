@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static NandgameASM2MC.NgasmLine;
+using static NgAssmbl.NgasmLine;
 
-namespace NandgameASM2MC
+namespace NgAssmbl
 {
     public class NgasmContext
     {
@@ -88,9 +88,11 @@ namespace NandgameASM2MC
 
         public Dictionary<string, string> defined_definitions = new();
         public Dictionary<string, ushort> defined_labels = new();
+        public Dictionary<string, string> defined_macros = new();
 
         public HashSet<string> definitions = new();
         public HashSet<string> labels = new();
+        public HashSet<string> macros = new();
 
         public List<NgasmLine> lines = new();
         public List<NgasmLine> late_lines = new();

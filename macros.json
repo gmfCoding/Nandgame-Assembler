@@ -1,0 +1,124 @@
+﻿{
+  "Constants": {
+    "STACK": {
+      "STACK_START": "0x100",
+      "SP": "0",
+      "ARGS": "1",
+      "LOCALS": "2",
+      "RETVAL": "6",
+      "TMP": "3"
+    }
+  }
+  "Macros": {
+    "INIT_STACK": {
+      "shared_constants": "STACK",
+      "code": "A = STACK_START\nD = A\nA = SP\n*A = D"
+    },
+    "PUSH_D": {
+      "shared_constants": "STACK",
+      "code": "A = SP\n*A = *A\n*A = *A+1\nA = *A-1\n*A = D"
+    },
+    "POP_D": {
+      "shared_constants": "STACK",
+      "code": "A = SP\nA, *A = *A-1\nD = *A"
+    },
+    "POP_A": {
+      "shared_constants": "STACK",
+      "code": "A = SP\nA, *A = *A-1\nA = *A"
+    },
+    "PUSH_VALUE": {
+      "placeholders": [ "value" ],
+      "code": "A = value\nD = A\nPUSH_D"
+    },
+    "ADD": {
+      "code": "POP_D\nA = A-1\n*A = D+*A"
+    },
+    "SUB": {
+      "code": "POP_D\nPOP_A\nD = A-D\nPUSH_D"
+    },
+    "NEG": {
+      "code": "A = SP\nA = *A-1\n*A = -*A"
+    },
+    "AND": {
+      "code": "POP_D\nPOP_A\nD = D&A\nPUSH_D"
+    },
+    "OR": {
+      "code": "POP_D\nPOP_A\nD = D|A\nPUSH_D"
+    },
+    "EQ": {
+      "labels": [ "end", "eq", "neq" ],
+      "code": "POP_D\nPOP_A\nD = A - D\nA = eq\nD;JEQ\nneq:\nPUSH_VALUE 0\nA = end\nJMP\neq:\nD = 0\nD = ~D\nPUSH_D\nend:"
+    },
+    "GT": {
+      "labels": [ "end", "eq", "neq" ],
+      "code": "POP_D\nPOP_A\nD = A - D\nA = eq\nD;JGT\nneq:\nPUSH_VALUE 0\nA = end\nJMP\neq:\nD = 0\nD = ~D\nPUSH_D\nend:"
+    },
+    "LT": {
+      "labels": [ "end", "eq", "neq" ],
+      "code": "POP_D\nPOP_A\nD = A - D\nA = eq\nD;JLT\nneq:\nPUSH_VALUE 0\nA = end\nJMP\neq:\nD = 0\nD = ~D\nPUSH_D\nend:"
+    },
+    "NOT": {
+      "shared_constants": "STACK",
+      "code": "A = SP\nA = *A-1\n*A = ~*A"
+    },
+    "GOTO": {
+      "placeholders": [ "label" ],
+      "code": "A = label\nJMP"
+    },
+    "IF_GOTO": {
+      "placeholders": [ "label" ],
+      "code": "POP_D\nA = label\nD;JNE"
+    },
+    "PUSH_MEMORY": {
+      "code": "POP_A\nD = *A\nPUSH_D"
+    },
+    "POP_MEMORY": {
+      "code": "POP_D\nPOP_A\n*A = D\n"
+    },
+    "PUSH_STATIC": {
+      "placeholders": [ "address" ],
+      "code": "A = address\nD = *A\nPUSH_D"
+    },
+    "POP_STATIC": {
+      "placeholders": [ "address" ],
+      "code": "POP_D\nA = address\n*A = D"
+    },
+    "CALL": {
+      "shared_constants": "STACK",
+      "placeholders": [ "functionName", "argumentCount" ],
+      "code": "PUSH_STATIC ARGS\nPUSH_STATIC LOCALS\nPUSH_VALUE RETADD\n\nPUSH_STATIC SP\nPUSH_VALUE argumentCount\nSUB\nPUSH_VALUE 3\nSUB\nPOP_STATIC ARGS\nGOTO functionName\nRETADD:\nPUSH_STATIC ARGS\nPOP_STATIC TMP\nPOP_STATIC LOCALS\nPOP_STATIC ARGS\nPUSH_STATIC TMP\nPOP_STATIC SP\nPUSH_STATIC RETVAL"
+    },
+    "FUNCTION": {
+      "shared_constants": "STACK",
+      "placeholders": [ "functionName", "localsCount" ],
+      "code": "functionName:\nPUSH_STATIC SP\nPOP_STATIC LOCALS\nPUSH_STATIC SP\nPUSH_VALUE localsCount\nADD\nPOP_STATIC SP"
+    },
+    "RETURN": {
+      "shared_constants": "STACK",
+      "placeholders": [],
+      "code": "POP_STATIC RETVAL\nPUSH_STATIC LOCALS\nPOP_STATIC SP\nPOP_A\nJMP"
+    },
+    "PUSH_ARG": {
+      "shared_constants": "STACK",
+      "placeholders": [ "index" ],
+      "code": "PUSH_STATIC ARGS\nPUSH_VALUE index\nADD\nPUSH_MEMORY"
+    },
+    "POP_ARG": {
+      "shared_constants": "STACK",
+      "placeholders": [ "index" ],
+      "code": "POP_STATIC TMP\nPUSH_STATIC ARGS\nPUSH_VALUE index\nADD\nPUSH_STATIC TMP\nPOP_MEMORY"
+    },
+    "PUSH_LOCAL": {
+      "shared_constants": "STACK",
+      "placeholders": [ "index" ],
+      "code": "PUSH_STATIC LOCALS\nPUSH_VALUE index\nADD\nPUSH_MEMORY"
+    },
+    "POP_LOCAL": {
+      "shared_constants": "STACK",
+      "placeholders": [ "index" ],
+      "code": "POP_STATIC TMP\nPUSH_STATIC LOCALS\nPUSH_VALUE index\nADD\nPUSH_STATIC TMP\nPOP_MEMORY"
+    }
+  }
+
+
+}

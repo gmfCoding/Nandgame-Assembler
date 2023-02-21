@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.IO;
+using System.Reflection;
+using Newtonsoft.Json;
 
-namespace NandgameASM2MC
+namespace NgAssmbl
 {
     class Program
     {
@@ -89,6 +91,19 @@ Assembles: Nandgame-Assembly 202202 (YYYYMM)";
             }
             else
                 program = source;
+
+            var macro_json = Assembly.GetExecutingAssembly().GetManifestResourceStream("NgAssmbl.macros.json");
+            if (macro_json == null)
+            {
+                Console.WriteLine("Cannot load default macro definitions");
+                return -1;
+            }
+            
+            StreamReader sr = new (macro_json);
+			
+            JsonTextReader jtr = new JsonTextReader(sr);
+												Macros macros = JsonSerializer.Create().Deserialize<Macros>(jtr);
+
 
             NgasmContext context = new NgasmContext(program, NgasmContext.Util.GetEndianMode(endianness[0]));
             context.Parse();

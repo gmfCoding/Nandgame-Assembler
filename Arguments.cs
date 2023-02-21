@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NandgameASM2MC
+namespace NgAssmbl
 {
     public class ArgumentsDefinitions
     {

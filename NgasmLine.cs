@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NandgameASM2MC
+namespace NgAssmbl
 {
     public class NgasmLine
     {
@@ -64,7 +64,7 @@ namespace NandgameASM2MC
             linews = Preprocessing.FilteredWhitespaces(line);
             linenws = Preprocessing.RemoveWhitespaces(line);
             stage = ParseStage.Begin;
-
+						
             if (line.Contains('#'))
             { isValid = comment = true; yield return OPResult.None; }
             int labelMode = Preprocessing.GetLabelMode(linews);
