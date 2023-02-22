@@ -114,7 +114,7 @@ namespace NandgameASM2MC
             {
                 string bytesstr = "";
                 foreach (var item in bytes)
-                    bytesstr += Convert.ToString(item, 2).PadLeft(2, '0');
+                    bytesstr += Convert.ToString(item, 2).PadLeft(8, '0');
                 return bytesstr.PadLeft(16, '0');
             }
             else if (Util.Has(format, PrintFormat.Hex))
@@ -148,9 +148,9 @@ namespace NandgameASM2MC
                 if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line))
                     continue;
                 var ngl = new NgasmLine();
-                ngl.reprocesses = ngl.ParseLine(this, i, src_lines);
-                ngl.reprocesses.MoveNext();
-                ngl.error = ngl.reprocesses.Current;
+                ngl.executor = ngl.ParseLine(this, i, src_lines);
+                ngl.executor.MoveNext();
+                ngl.error = ngl.executor.Current;
                 lines.Add(ngl);
                 if (ngl.isInstruction)
                     instruction_address++;
@@ -159,7 +159,7 @@ namespace NandgameASM2MC
             foreach (var item in lines)
             {
                 if (item.error == OPResult.Postprocess)
-                    item.reprocesses.MoveNext();
+                    item.executor.MoveNext();
             }
         }
         public void Preprocessor()

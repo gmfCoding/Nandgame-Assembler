@@ -33,7 +33,7 @@ namespace NandgameASM2MC
 
         public OPType opType;
         public OPResult error;
-        public IEnumerator <OPResult> reprocesses;
+        public IEnumerator <OPResult> executor;
         public ParseStage stage;
 
         public bool rhs_ptr;

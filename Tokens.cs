@@ -41,7 +41,7 @@ namespace NandgameASM2MC
             {"JMP", JUMP_CODE}
         };
 
-        public const ushort A_PTR_EXP_CODE = 0x100;
+        public const ushort A_PTR_EXP_CODE = 0x1000;
         public const ushort JUMP_CODE = 0x8007;
         public const ushort INSTRUCTION_CODE = 0x8000;
         public readonly static char[] bit_ops = { '&', '|', '^', '~' };
