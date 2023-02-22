@@ -123,7 +123,7 @@ namespace NandgameASM2MC
                 if (destinations.Length == 1 && destinations[0] == "A")
                 {
                     bool attempt = ushort.TryParse(rhs, out ushort number);
-                    if(!attempt && rhs.Contains('x'))
+                    if (!attempt && rhs.Contains('x'))
                         attempt = ushort.TryParse(rhs.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out number);
 
                     if (Attempt(ref attempt, context.labels.Contains(rhs)))
@@ -168,6 +168,9 @@ namespace NandgameASM2MC
                 { jmp = line_data[2]; rhs = line_data[1]; }
                 else
                 { rhs = line_data[0]; jmp = line_data[1]; }
+
+                if (Tokens.byteMap.ContainsKey(rhs))
+                    code |= Tokens.byteMap[rhs];
                 if (Tokens.byteMap.ContainsKey(jmp))
                     code |= Tokens.byteMap[jmp];
                 else
