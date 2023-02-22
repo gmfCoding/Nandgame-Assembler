@@ -140,7 +140,7 @@ namespace NandgameASM2MC
 
                     if (attempt)
                     {
-                        code |= number;
+                        code = number;
                         assignValue = true;
                         isValid = true;
                         yield return OPResult.Finished;
