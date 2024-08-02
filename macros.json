@@ -8,7 +8,7 @@
       "RETVAL": "6",
       "TMP": "3"
     }
-  }
+  },
   "Macros": {
     "INIT_STACK": {
       "shared_constants": "STACK",
@@ -119,6 +119,4 @@
       "code": "POP_STATIC TMP\nPUSH_STATIC LOCALS\nPUSH_VALUE index\nADD\nPUSH_STATIC TMP\nPOP_MEMORY"
     }
   }
-
-
 }

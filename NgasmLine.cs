@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NgAssmbl
+namespace NgAssmblCore
 {
     public class NgasmLine
     {
@@ -13,6 +13,12 @@ namespace NgAssmbl
         [Flags]
         public enum OPResult { None = 0, Finished = 1, Error = 2, NotUsed = 4, BadFormat = 8, Postprocess = 16 };
         public enum ParseStage { Begin, Assignment, Expression, Jump };
+
+
+        /// <summary>
+        /// Largest constant that can be assigned to A
+        /// </summary>
+        public const ushort largestAssignment = 32767;
 
         public int lineNumber = 0;
 
@@ -143,6 +149,8 @@ namespace NgAssmbl
                         code = number;
                         assignValue = true;
                         isValid = true;
+                        if (number > largestAssignment)
+                            yield return OPResult.Error;
                         yield return OPResult.Finished;
                     }
                 }

@@ -4,19 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NgAssmbl
+namespace NgAssmblCore
 {
     public class ArgumentsDefinitions
     {
-        HashSet<int> usedIDs = new();
+        HashSet<int> usedIDs = new HashSet<int>();
 
-        HashSet<string> definedFields = new();
-        Dictionary<int, string> idFieldMap = new();
-        Dictionary<string, int> fieldIDMap = new();
+        HashSet<string> definedFields = new HashSet<string>();
+        Dictionary<int, string> idFieldMap = new Dictionary<int, string>();
+        Dictionary<string, int> fieldIDMap = new Dictionary<string, int>();
 
-        HashSet<string> definedFlags = new();
-        Dictionary<int, string> idFlagMap = new();
-        Dictionary<string, int> flagIDMap = new();
+        HashSet<string> definedFlags = new HashSet<string>();
+        Dictionary<int, string> idFlagMap = new Dictionary<int, string>();
+        Dictionary<string, int> flagIDMap = new Dictionary<string, int>();
 
         public ArgumentsDefinitions()
         {
@@ -111,10 +111,10 @@ namespace NgAssmbl
         public string[] args;
         ArgumentsDefinitions definitions;
 
-        List<string> standalone = new();
+        List<string> standalone = new List<string>();
 
-        Dictionary<int, string> foundFields = new();
-        HashSet<int> foundFlags = new();
+        Dictionary<int, string> foundFields = new Dictionary<int, string>();
+        HashSet<int> foundFlags = new HashSet<int>();
 
         public string help;
 

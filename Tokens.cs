@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NgAssmbl
+namespace NgAssmblCore
 {
     public class Tokens
     {
-        public readonly static Dictionary<string, ushort> destByteMap = new() { { "A", 0x20 }, { "D", 0x10 }, { "*A", 0x8 } };
+        public readonly static Dictionary<string, ushort> destByteMap = new Dictionary<string, ushort>() { { "A", 0x20 }, { "D", 0x10 }, { "*A", 0x8 } };
 
-        public readonly static Dictionary<string, ushort> byteMap = new()
+        public readonly static Dictionary<string, ushort> byteMap = new Dictionary<string, ushort>()
         {
             {"D+A", 0x400},
             {"D+1", 0x500},

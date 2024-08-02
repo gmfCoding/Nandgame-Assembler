@@ -3,24 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace NgAssmbl
+namespace NgAssmblCore
 {
-	class MacroDefinition
+    public class MacroDefinition
 	{
-		public string shared_constant;
+		public string shared_constants;
 		public string[] placeholders;
 		public string[] labels;
-		public string[] code;
+		public string code;
 	}
 
-	class Macros
+	public class Macros
 	{
 		[JsonProperty("Constants")]
 		public Dictionary<string, Dictionary<string, string>> constants;
+
 		[JsonProperty("Macros")]
 		public Dictionary<string, MacroDefinition> macros;
 
-		public Dictionary<string, MacroInstancer> instancers = new();
+		public Dictionary<string, MacroInstancer> instancers = new Dictionary<string, MacroInstancer>();
 
 		public bool ContainsMacro(string line)
 		{
@@ -82,7 +83,7 @@ namespace NgAssmbl
 		}
 	}
 
-	class MacroInstancer
+    public class MacroInstancer
 	{
 		/// <summary> The assembly code implementation of the macro.</summary>
 		public string[] code;
@@ -92,10 +93,10 @@ namespace NgAssmbl
 		public static HashSet<string> usedSalts;
 		public MacroInstancer(MacroDefinition definition, Macros macros)
 		{
-			constants = macros.GetConstants(definition.shared_constant);
-			labels = new (definition.labels);
+			constants = macros.GetConstants(definition.shared_constants);
+			labels = new HashSet<string>(definition.labels);
 			if (constants == null)
-				constants = new();
+				constants = new Dictionary<string, string>();
 		}
 
 		private static Random random = new Random();
@@ -104,7 +105,7 @@ namespace NgAssmbl
 		{
 			const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 			string value = new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
-			usedSalts.Append(value);
+			usedSalts.Add(value);
 			return value;
 		}
 
@@ -122,7 +123,7 @@ namespace NgAssmbl
 			for (int i = 0; i < this.code.Length; i++)
 			{
 				output[i] = Preprocessing.FilteredWhitespaces(code[i]);
-				if (output[i].TrimStart().StartsWith('#'))
+				if (output[i].TrimStart().StartsWith("#"))
 					continue;
 				int labelMode = Preprocessing.GetLabelMode(output[i]);
 

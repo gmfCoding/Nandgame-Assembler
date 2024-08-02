@@ -3,11 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
-using static NgAssmbl.NgasmLine;
+using static NgAssmblCore.NgasmLine;
 
-namespace NgAssmbl
+namespace NgAssmblCore
 {
     public class NgasmContext
     {
@@ -20,7 +21,12 @@ namespace NgAssmbl
 
         public static class Util
         {
-            public static bool Has(dynamic bits, dynamic flag)
+            public static bool Has(PrintMode bits, PrintMode flag) 
+            {
+                return (bits & flag) == flag;
+            }
+
+            public static bool Has(PrintFormat bits, PrintFormat flag)
             {
                 return (bits & flag) == flag;
             }
@@ -63,6 +69,14 @@ namespace NgAssmbl
                 return data;
             }
 
+            public static string BytesToHex(byte[] data)
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (byte b in data)
+                    sb.Append(b.ToString("X2"));
+                return sb.ToString();
+            }
+
             public static PrintFormat formatFromChar(char c)
             { 
                 switch (c)
@@ -84,19 +98,19 @@ namespace NgAssmbl
                         return PrintFormat.None;
                 }
             }
-    }
+        }
 
-        public Dictionary<string, string> defined_definitions = new();
-        public Dictionary<string, ushort> defined_labels = new();
-        public Dictionary<string, string> defined_macros = new();
+        public Dictionary<string, string> defined_definitions = new Dictionary<string, string>();
+        public Dictionary<string, ushort> defined_labels = new Dictionary<string, ushort>();
+        public Dictionary<string, string> defined_macros = new Dictionary<string, string>();
 
-        public HashSet<string> definitions = new();
-        public HashSet<string> labels = new();
-        public HashSet<string> macros = new();
+        public HashSet<string> definitions = new HashSet<string>();
+        public HashSet<string> labels = new HashSet<string>();
+        public HashSet<string> macros = new HashSet<string>();
 
-        public List<NgasmLine> lines = new();
-        public List<NgasmLine> late_lines = new();
-        public List<string> errors = new();
+        public List<NgasmLine> lines = new List<NgasmLine>();
+        public List<NgasmLine> late_lines = new List<NgasmLine>();
+        public List<string> errors = new List<string>();
         public string[] src_lines;
 
         public ushort instruction_address;
@@ -106,7 +120,7 @@ namespace NgAssmbl
         public NgasmContext(string code, bool isLittleEndian)
         {
             this.isLittleEndian = isLittleEndian;
-            src_lines = code.Split("\r\n");
+            src_lines = code.Split(new string[] { "\r\n" }, StringSplitOptions.None);
         }
 
         public string GetOutput(ushort code)
@@ -121,7 +135,7 @@ namespace NgAssmbl
             }
             else if (Util.Has(format, PrintFormat.Hex))
             {
-                return Convert.ToHexString(bytes);
+                return Util.BytesToHex(bytes);
             }
             else
             {
@@ -140,7 +154,7 @@ namespace NgAssmbl
             Console.ForegroundColor = previous;
         }
 
-        public void Parse()
+        public bool Parse()
         {
             Preprocessor();
 
@@ -157,12 +171,29 @@ namespace NgAssmbl
                 if (ngl.isInstruction)
                     instruction_address++;
             }
-
+            bool succesful = true;
             foreach (var item in lines)
             {
-                if (item.error == OPResult.Postprocess)
-                    item.executor.MoveNext();
+                switch (item.error)
+                {
+                    case OPResult.None:
+                        break;
+                    case OPResult.Finished:
+                        break;
+                    case OPResult.NotUsed:
+                        break;
+                    case OPResult.Error:
+                    case OPResult.BadFormat:
+                        succesful = false;
+                        break;
+                    case OPResult.Postprocess:
+                        item.executor.MoveNext();
+                        break;
+                    default:
+                        break;
+                }
             }
+            return succesful;
         }
         public void Preprocessor()
         {
@@ -249,7 +280,7 @@ namespace NgAssmbl
             PrintFormat previous = this.format;
             this.format = opFormat;
 
-            List<ushort> codes = new();
+            List<ushort> codes = new List<ushort>();
             foreach (var line in lines)
             {
                 if (!line.isInstruction && !line.isValid)
