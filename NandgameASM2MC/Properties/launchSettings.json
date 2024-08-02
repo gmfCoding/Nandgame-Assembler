@@ -1,0 +1,32 @@
+{
+  "profiles": {
+    "version": {
+      "commandName": "Project",
+      "commandLineArgs": "--version"
+    },
+    "test.txt": {
+      "commandName": "Project",
+      "commandLineArgs": "-m opcode,source -f b test.txt -m normal,label_def"
+    },
+    "code": {
+      "commandName": "Project",
+      "commandLineArgs": "-c \"A=D\" -m opcode,source -f b -e b"
+    },
+    "A=X": {
+      "commandName": "Project",
+      "commandLineArgs": "-c \"A=10\" -m opcode,source"
+    },
+    "A = D+A;JEQ": {
+      "commandName": "Project",
+      "commandLineArgs": "-c \"A = D+A;JEQ\" -m opcode,source"
+    },
+    "D = D & *A": {
+      "commandName": "Project",
+      "commandLineArgs": "-c \"D = D & *A\" -m opcode,source"
+    },
+    "D; JNE": {
+      "commandName": "Project",
+      "commandLineArgs": "-c \"D;JNE\" -m opcode,source"
+    }
+  }
+}
