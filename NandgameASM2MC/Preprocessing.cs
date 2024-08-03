@@ -49,7 +49,7 @@ namespace NgAssmblCore
         }
 
         /// <summary>
-        /// All occurances of whitespace are guarenteed to be spaces
+        /// All occurances of whitespace are guarenteed to be removed
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>

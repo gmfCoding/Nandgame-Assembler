@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "NgAssmblExec": {
+      "commandName": "Project"
+    },
+    "D = A": {
+      "commandName": "Project",
+      "commandLineArgs": "-c \"D = A\" -f n -m opcode,source -p h -o d_a.bin -cm // -sep ,"
+    }
+  }
+}

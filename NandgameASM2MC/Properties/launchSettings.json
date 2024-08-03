@@ -27,6 +27,10 @@
     "D; JNE": {
       "commandName": "Project",
       "commandLineArgs": "-c \"D;JNE\" -m opcode,source"
+    },
+    "D=A": {
+      "commandName": "Project",
+      "commandLineArgs": "-c \"D=A\" -t h -f r"
     }
   }
 }

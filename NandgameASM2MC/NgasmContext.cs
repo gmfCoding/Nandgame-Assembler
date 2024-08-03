@@ -13,10 +13,12 @@ namespace NgAssmblCore
     public class NgasmContext
     {
         [Flags]
-        public enum PrintFormat { None, Binary = 1, Dec = 2, Hex = 4 };
+        public enum PrintFormat { None, Raw = None, Binary = 1, Dec = 2, Hex = 4, Prefix = 8 };
 
         [Flags]
-        public enum PrintMode { none = 0, line = 1, comment = 2, opcode = 4, source = 8, lineeach = 16, errors = 32, label_def = 64, full_source = 128,  normal = opcode | source | comment | lineeach | errors | label_def}
+        public enum PrintMode { none = 0, line = 1, comment = 2, opcode = 4, source = 8, lineeach = 16, errors = 32, label_def = 64, full_source = 128, normal = opcode | source | comment | lineeach | errors | label_def}
+
+        NgasmContextOptions opt = new NgasmContextOptions();
         PrintFormat format = PrintFormat.Hex;
 
         public static class Util
@@ -93,6 +95,7 @@ namespace NgAssmblCore
                         return NgasmContext.PrintFormat.Hex;
                     case 'R':
                     case 'r':
+                        return NgasmContext.PrintFormat.Raw;
                     case 'N':
                     case 'n':
                         return PrintFormat.None;
@@ -115,27 +118,29 @@ namespace NgAssmblCore
 
         public ushort instruction_address;
 
-        public bool isLittleEndian;
-
-        public NgasmContext(string code, bool isLittleEndian)
+        public NgasmContext(string code, NgasmContextOptions options = null)
         {
-            this.isLittleEndian = isLittleEndian;
+            if (options == null)
+                options = new NgasmContextOptions();
+            opt = options;
             src_lines = code.Split(new string[] { "\r\n" }, StringSplitOptions.None);
         }
 
         public string GetOutput(ushort code)
         {
-            byte[] bytes = Util.GetEndianBytes(BitConverter.GetBytes(code), isLittleEndian);
+            bool prefix = Util.Has(format, PrintFormat.Prefix);
+
+            byte[] bytes = Util.GetEndianBytes(BitConverter.GetBytes(code), opt.littleEndian);
             if (Util.Has(format, PrintFormat.Binary))
             {
                 string bytesstr = "";
                 foreach (var item in bytes)
                     bytesstr += Convert.ToString(item, 2).PadLeft(8, '0');
-                return bytesstr.PadLeft(16, '0');
+                return $"{(prefix ? "0b" : "")}{bytesstr.PadLeft(16, '0')}";
             }
             else if (Util.Has(format, PrintFormat.Hex))
             {
-                return Util.BytesToHex(bytes);
+                return $"{(prefix ? "0x" : "")}{Util.BytesToHex(bytes)}";
             }
             else
             {
@@ -259,9 +264,9 @@ namespace NgAssmblCore
                 if (Util.Has(printMode, PrintMode.line))
                     Write($"{line.lineNumber} :", ConsoleColor.Yellow, true);
                 if (Util.Has(printMode, PrintMode.source))
-                    Write($"{(!line.comment ? "# " : "#")}{line.linews}", ConsoleColor.Green, true);
+                    Write($"{(!line.comment ? $"{opt.commentPrefix} " : opt.commentPrefix)}{line.linews}", ConsoleColor.Green, true);
                 if (line.isInstruction && line.isValid && Util.Has(printMode, PrintMode.opcode))
-                    Write(GetOutput(line.code), ConsoleColor.White, true);
+                    Write($"{GetOutput(line.code)}{opt.separator}", ConsoleColor.White, true);
                 else if (line.isInstruction && Util.Has(printMode, PrintMode.errors))
                     Write($"{GetOutput(line.code)} : {line.linews}", ConsoleColor.Red, true);
             }
@@ -273,7 +278,6 @@ namespace NgAssmblCore
             }
             format = previous;
         }
-
 
         public void Save(string filepath, PrintFormat opFormat)
         {
@@ -287,11 +291,11 @@ namespace NgAssmblCore
                 { Write("Could not save to file because of compilation error!", ConsoleColor.Red, true); return; }
                 codes.Add(line.code);
             }
-            if (opFormat == PrintFormat.None)
+            if (opFormat == PrintFormat.None || opFormat == PrintFormat.Raw)
             {
                 BinaryWriter bw = new BinaryWriter(File.Open(filepath, FileMode.Create, FileAccess.Write));
                 foreach (var data in codes)
-                    bw.Write(Util.GetEndianBytes(BitConverter.GetBytes(data), isLittleEndian));
+                    bw.Write(Util.GetEndianBytes(BitConverter.GetBytes(data), opt.littleEndian));
                 bw.Dispose();
             }
             else

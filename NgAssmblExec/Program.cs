@@ -5,6 +5,7 @@ using System.Reflection;
 using Newtonsoft.Json;
 using static NgAssmblCore.NgasmContext;
 using NgAssmblCore;
+using System.Xml.Linq;
 
 namespace NgAssmblExec
 {
@@ -14,6 +15,62 @@ namespace NgAssmblExec
         public static string version =
 @"Assembler version 0.1
 Assembles: Nandgame-Assembly 202202 (YYYYMM)";
+
+        public static bool TryHandleMacros(Arguments args, out Macros macros)
+        {
+            string macro_path = "";
+            Stream macro_stream;
+
+            macros = null;
+
+            if (args.TryValues(ref macro_path, "mf", "macro-file"))
+            {
+                if (File.Exists(macro_path))
+                {
+                    Console.Write($"Cannot find custom macro json configuration {macro_path}");
+                    return false;
+                }
+                macro_stream = File.OpenRead(macro_path);
+            }
+            else
+                macro_stream = Assembly.GetAssembly(typeof(Macros)).GetManifestResourceStream("NgAssmblCore.macros.json");
+
+            if (macro_stream == null)
+            {
+                Console.WriteLine("Cannot load macro definitions");
+                return false;
+            }
+
+            using (StreamReader sr = new StreamReader(macro_stream))
+            {
+                using (JsonTextReader jtr = new JsonTextReader(sr))
+                {
+                    macros = JsonSerializer.Create().Deserialize<Macros>(jtr);
+                }
+            }
+            macro_stream.Dispose();
+            return true;
+        }
+
+        public static bool TryHandleSource(Arguments args, out string program)
+        {
+            string source = "";
+
+            if (!args.TryValues(ref source, "c", "code"))
+            {
+                if (string.IsNullOrEmpty(args.GetAloneFromFront(0)))
+                {
+                    Console.WriteLine("No source loaded, please load source from a file or from -c");
+                    program = null;
+                    return false;
+                }
+                program = File.ReadAllText(args.GetAloneFromFront(0));
+            }
+            else
+                program = source;
+            return true;
+        }
+
         static int Main(string[] arguments)
         {
             string program;
@@ -27,6 +84,9 @@ Assembles: Nandgame-Assembly 202202 (YYYYMM)";
             definitions.DefineField("p", "print");
             definitions.DefineFlag("h", "help");
             definitions.DefineFlag("v", "version");
+            definitions.DefineField("mf", "macro-file");
+            definitions.DefineField("cmp", "comment-prefix");
+            definitions.DefineField("sep", "separator");
 
             Arguments args = new Arguments(arguments_help, definitions);
 
@@ -52,6 +112,9 @@ Assembles: Nandgame-Assembly 202202 (YYYYMM)";
             string terminalFormat = "b";
             string source = "";
             string endianness = "b";
+            string commentPrefix = "#";
+            string separator = "";
+            string _ = "";
 
             bool o_spec = args.TryValues(ref outputFile, "o", "output");
             bool f_spec = args.TryValues(ref outputFormat, "f", "format");
@@ -60,6 +123,10 @@ Assembles: Nandgame-Assembly 202202 (YYYYMM)";
             bool t_spec = args.TryValues(ref terminalFormat, "t", "terminal");
             bool c_spec = args.TryValues(ref source, "c", "code");
             bool e_spec = args.TryValues(ref endianness, "e", "endian");
+            bool cm_spec = args.TryValues(ref commentPrefix, "cmp", "comment-prefix");
+            bool mf_spec = args.TryValues(ref _, "mf", "macro-file");
+            bool sep_spec = args.TryValues(ref separator, "sep", "separator");
+
             if (c_spec && !m_spec)
                 printMode = "none";
 
@@ -73,73 +140,52 @@ Assembles: Nandgame-Assembly 202202 (YYYYMM)";
                 else
                 { Console.WriteLine($"Unknown print mode: {item}"); Console.WriteLine(arguments_help); return -1; }
             }
-            PrintFormat t_printFormat = PrintFormat.None;
 
-            foreach (char item in terminalFormat)
-                t_printFormat |= Util.formatFromChar(terminalFormat[0]);
+            PrintFormat finalTerminalFormat = PrintFormat.None;
+            if (!string.IsNullOrEmpty(terminalFormat))
+                finalTerminalFormat |= Util.formatFromChar(terminalFormat[0]);
 
-            PrintFormat o_PrintFormat = PrintFormat.None;
-            foreach (char item in outputFormat)
-                o_PrintFormat |= Util.formatFromChar(terminalFormat[0]);
+            PrintFormat finalPrintFormat = PrintFormat.None;
+            if (!string.IsNullOrEmpty(fullPrintFormats))
+                finalPrintFormat |= Util.formatFromChar(fullPrintFormats[0]);
 
-            if (!c_spec)
-            {
-                if (string.IsNullOrEmpty(args.GetAloneFromFront(0)))
-                {
-                    Console.WriteLine("No source loaded, please load source from a file or from -c");
-                    return -1;
-                }
-                program = File.ReadAllText(args.GetAloneFromFront(0));
-            }
-            else
-                program = source;
-
-            var macro_json = Assembly.GetExecutingAssembly().GetManifestResourceStream("NgAssmbl.macros.json");
-            if (macro_json == null)
-            {
-                Console.WriteLine("Cannot load default macro definitions");
+            if (!TryHandleSource(args, out program))
                 return -1;
-            }
 
-            StreamReader sr = new StreamReader(macro_json);
+            if (!TryHandleMacros(args, out Macros macros))
+                return -1;
 
-            JsonTextReader jtr = new JsonTextReader(sr);
-            Macros macros = JsonSerializer.Create().Deserialize<Macros>(jtr);
+            NgasmContext context = new NgasmContext(program, new NgasmContextOptions()
+            {
+                littleEndian = Util.GetEndianMode(endianness[0]),
+                commentPrefix = commentPrefix,
+                separator = separator
+            });
 
-
-            NgasmContext context = new NgasmContext(program, NgasmContext.Util.GetEndianMode(endianness[0]));
             context.Parse();
-            context.Print(printModes, t_printFormat);
+            context.Print(printModes, finalTerminalFormat);
 
             if (!c_spec || o_spec)
-                context.Save(outputFile, o_PrintFormat);
-
+                context.Save(outputFile, finalPrintFormat);
+            
             if (p_spec)
             {
-                if (fullPrintFormats.Contains("b"))
+                void AttemptPrint(string list, PrintFormat targetFormat, char type)
                 {
-                    if (fullPrintFormats.Contains("m"))
-                        Console.WriteLine("Machine Code (binary)");
+                    if (!list.Contains(type) && !list.Contains(char.ToUpper(type)))
+                        return;
+                    if (list.Contains(char.ToUpper(type)))
+                        targetFormat = targetFormat | PrintFormat.Prefix;
+                    if (list.Contains("m"))
+                            Console.WriteLine("Machine Code (binary)");
                     else
                         Console.WriteLine();
-                    context.Print(NgasmContext.PrintMode.opcode, NgasmContext.PrintFormat.Binary);
+                    context.Print(PrintMode.opcode, targetFormat);
                 }
-                if (fullPrintFormats.Contains("h"))
-                {
-                    if (fullPrintFormats.Contains("m"))
-                        Console.WriteLine("Machine Code (Hex):");
-                    else
-                        Console.WriteLine();
-                    context.Print(NgasmContext.PrintMode.opcode, NgasmContext.PrintFormat.Hex);
-                }
-                if (fullPrintFormats.Contains("d"))
-                {
-                    if (fullPrintFormats.Contains("m"))
-                        Console.WriteLine("Machine Code (decimal)");
-                    else
-                        Console.WriteLine();
-                    context.Print(NgasmContext.PrintMode.opcode, NgasmContext.PrintFormat.Dec);
-                }
+
+                AttemptPrint(fullPrintFormats, PrintFormat.Binary, 'b');
+                AttemptPrint(fullPrintFormats, PrintFormat.Hex, 'h');
+                AttemptPrint(fullPrintFormats, PrintFormat.Dec, 'd');
             }
             return 1;
         }
@@ -181,7 +227,7 @@ Help:
         Specify the printing mode/s:
         This applies to terminal output preview and not file output.
         list values:
-        none, line, comment, opcode, source, lineeach, errors, label_def, full_source, normal
+        none, line, comment, opcode, source, comma, lineeach, errors, label_def, full_source, normal
         normal = (opcode,source,comment,lineeach,errors,label_def)
 
     -t terminal [bdh]
@@ -199,9 +245,21 @@ Help:
     -p print (bdhm)
         Print the all the opcode
         b:ascii binary (default)
+        B:ascii binary (default)
         d:ascii decimal
         h:ascii hex
+        H:ascii hex
+
         m:Print ""Machine Code(type)"" before the opcodes
+
+    -cmp comment-prefix <string>
+        The prefix string to use for comment lines (used with -m source)
+
+    -cma comma <string>
+        Output with commas
+
+    -mf macro-file <path>
+        Supplies a custom macro expansion json config file (stack operations)
 
     -v version
         Print assembler the version.

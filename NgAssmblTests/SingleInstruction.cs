@@ -211,7 +211,7 @@ namespace NgAssmblTests
 
         public void ExecuteGeneralTest(string code, int opcode, bool expected_result)
         {
-            NgasmContext context = new NgasmContext(code, true);
+            NgasmContext context = new NgasmContext(code, new NgasmContextOptions() { littleEndian = true });
             bool success = context.Parse();
             if (expected_result == false)
             {
