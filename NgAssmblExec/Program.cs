@@ -19,8 +19,6 @@ Assembles: Nandgame-Assembly 202202 (YYYYMM)";
         public static bool TryHandleMacros(Arguments args, out Macros macros)
         {
             string macro_path = "";
-            Stream macro_stream;
-
             macros = null;
 
             if (args.TryValues(ref macro_path, "mf", "macro-file"))
@@ -30,26 +28,21 @@ Assembles: Nandgame-Assembly 202202 (YYYYMM)";
                     Console.Write($"Cannot find custom macro json configuration {macro_path}");
                     return false;
                 }
-                macro_stream = File.OpenRead(macro_path);
-            }
-            else
-                macro_stream = Assembly.GetAssembly(typeof(Macros)).GetManifestResourceStream("NgAssmblCore.macros.json");
 
-            if (macro_stream == null)
-            {
-                Console.WriteLine("Cannot load macro definitions");
-                return false;
-            }
-
-            using (StreamReader sr = new StreamReader(macro_stream))
-            {
-                using (JsonTextReader jtr = new JsonTextReader(sr))
+                using (Stream macro_stream = File.OpenRead(macro_path))
                 {
-                    macros = JsonSerializer.Create().Deserialize<Macros>(jtr);
+                    using (StreamReader sr = new StreamReader(macro_stream))
+                    {
+                        using (JsonTextReader jtr = new JsonTextReader(sr))
+                        {
+                            macros = JsonSerializer.Create().Deserialize<Macros>(jtr);
+                        }
+                    }
                 }
             }
-            macro_stream.Dispose();
-            return true;
+            else
+                macros = Macros.GetDefault();
+            return macros != null;
         }
 
         public static bool TryHandleSource(Arguments args, out string program)

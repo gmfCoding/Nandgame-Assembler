@@ -57,5 +57,13 @@ namespace NgAssmblCore
         {
             return new string(str.ToCharArray().Where(c => !Char.IsWhiteSpace(c)).ToArray());
         }
+
+        public static string[] SplitNewLines(string str)
+        {
+            return str.Split(
+                new string[] { "\r\n", "\r", "\n" },
+                StringSplitOptions.None
+            );
+        }
     }
 }

@@ -189,7 +189,9 @@ namespace NgAssmblCore
                         break;
                     case OPResult.Error:
                     case OPResult.BadFormat:
+                    case OPResult.BadFormat | OPResult.Error:
                         succesful = false;
+                        this.errors.Add($"Bad Format: '{item.linenws}' L{item.lineNumber}");
                         break;
                     case OPResult.Postprocess:
                         item.executor.MoveNext();
