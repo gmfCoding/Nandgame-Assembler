@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -116,24 +117,32 @@ namespace NgAssmblCore
 		public static HashSet<string> usedSalts = new HashSet<string>();
 
 		MacroDefinition definition;
+		Macros macros;
 
-        public MacroInstancer(MacroDefinition definition, Macros macros)
+
+		public class Options
 		{
+			public string uniquePrefix = null;
+			public bool expandConstants = true;
+		}
+
+		public MacroInstancer(MacroDefinition definition, Macros macros)
+		{
+			this.definition = definition;
+			this.macros = macros;
+
 			constants = macros.constants;
             if (definition.labels != null)
 				labels = new HashSet<string>(definition.labels);
 			if (definition.placeholders != null)
 				placeholders_order = new List<string>(definition.placeholders);
-			string preLabel = definition.code;
-			if (labels != null)
-				foreach (var item in labels)
-				{
-					preLabel = preLabel.Replace(item, GetUniqueSalt());
-				}
+			//string preLabel = definition.code;
+			//if (labels != null)
+			//	foreach (var item in labels)
+			//	{
+			//		preLabel = preLabel.Replace(item, GetUniqueSalt());
+			//	}
 			code = Preprocessing.SplitNewLines(definition.code);
-			this.definition = definition;
-            if (labels == null)
-                labels = new HashSet<string>();
             if (placeholders_order == null)
                 placeholders_order = new List<string>();
         }
@@ -155,14 +164,13 @@ namespace NgAssmblCore
 		/// <returns>Code to exapand/replace the macro </returns>
 		/// 
 
-		/// TODO:Convert to take in Line list and output line list, export dict of labels mapping to line instances
-		public bool Generate(List<string> arguments, out string[] output, out Dictionary<string, List<int>> labelLines, out string errors)
+		public bool Generate(List<string> arguments, Line parent, out List<Line> output, /*out Dictionary<string, List<Line>> labelLines, // 08*/ out string errors, Options opt)
 		{
 			Dictionary<string, string> placeholders = new Dictionary<string, string>();
             string unique = GetUniqueSalt();
 
-			labelLines = new Dictionary<string, List<int>>();
-			output = new string[code.Length];
+			//labelLines = new Dictionary<string, List<Line>>(); // 08
+			output = new List<Line>(code.Length);
             errors = null;
 
             for (int i = 0; i < placeholders_order.Count() && i < arguments.Count(); i++)
@@ -175,16 +183,17 @@ namespace NgAssmblCore
 			string[] temp;
 			for (int i = 0; i < this.code.Length; i++)
 			{
-				output[i] = Preprocessing.FilteredWhitespaces(code[i]);
-				if (output[i].TrimStart().StartsWith("#"))
+				Line line = new Line(Preprocessing.FilteredWhitespaces(code[i].Trim()), parent.number, parent.depth + 1, macros);
+				if (line.line.StartsWith("#"))
 					continue;
-				int labelMode = Preprocessing.GetLabelMode(output[i]);
+				output.Add(line);
+				int labelMode = Preprocessing.GetLabelMode(line.line);
 				
-				temp = output[i].Split(' ', '=', ':');
+				temp = line.line.Split(' ', '=', ':');
 				if (labelMode == 1 && temp.Length > 1)
-					output[i] = output[i].Replace(temp[1], unique + temp[1]);
+					line.line = line.line.Replace(temp[1], unique + temp[1]);
 				else if (labelMode == 2)
-					output[i] = output[i].Replace(output[i].Trim(), unique + output[i].Trim());
+					line.line = line.line.Replace(line.line.Trim(), unique + line.line.Trim());
 				else
 				{
 					/* Replaces appends unique to the remaing label values,
@@ -193,21 +202,24 @@ namespace NgAssmblCore
 						if (labels.Contains(item))
 						{
 							string label = unique + item;
-							if (!labelLines.ContainsKey(label))
-                                labelLines.Add(label, new List<int>());
-                            labelLines[label].Add(i);
-                            output[i] = output[i].Replace(item, label);
+							//if (!labelLines.ContainsKey(label))  // 08
+       //                         labelLines.Add(label, new List<Line>());  // 08
+       //                     labelLines[label].Add(line); // 08
+                            line.line = line.line.Replace(item, label);
 						}
 
                     /* Replaces any placeholders tokens with the actual value */
                     foreach (var item in placeholders)
                         if (temp.Contains(item.Key))
-                            output[i] = output[i].Replace(item.Key, item.Value);
+                            line.line = line.line.Replace(item.Key, item.Value);
 
-                    /* Replaces any constant tokens with the actual value */
-                    foreach (var item in constants)
-                        if (temp.Contains(item.Key))
-                            output[i] = output[i].Replace(item.Key, item.Value);
+					if (opt.expandConstants)
+					{
+						/* Replaces any constant tokens with the actual value */
+						foreach (var item in constants)
+							if (temp.Contains(item.Key))
+								line.line = line.line.Replace(item.Key, item.Value);
+					}
                 }
 			}
 			return true;

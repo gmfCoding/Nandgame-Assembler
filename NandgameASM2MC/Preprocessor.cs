@@ -14,6 +14,8 @@ namespace NgAssmblCore
         public bool processMacro;
         public bool constants;
 
+        public bool label;
+
         public List<Line> children;
 
         public Line(string line, int number, int depth, Macros macros)
@@ -30,16 +32,20 @@ namespace NgAssmblCore
     {
         Macros macros;
 
+        public class Options
+        {
+            public readonly bool expandSharedConstants = true;
+            public readonly bool errorOnMax = true;
+            public readonly int maxDepth = Preprocessor.recommendedMaxDepth;
+        }
+
         public const int recommendedMaxDepth = 10;
 
-        int maxDepth;
-        bool errorMax;
+        Options opt = new Options();
 
-        public Preprocessor(Macros macros, bool errorMax = true, int maxDepth = Preprocessor.recommendedMaxDepth)
+        public Preprocessor(Macros macros, Options options = null)
         {
             this.macros = macros;
-            this.maxDepth = maxDepth;
-            this.errorMax = errorMax;
         }
 
         public bool ContainsMacros(List<string> source)
@@ -76,11 +82,11 @@ namespace NgAssmblCore
                         return false;
                     foreach (var child in item.children)
                     {
-                        if (child.depth >= maxDepth)
+                        if (child.depth >= opt.maxDepth)
                         {
-                            if (errorMax)
+                            if (opt.errorOnMax)
                             {
-                                error = $"Exceeded set maximum macro recusion depth of {maxDepth}";
+                                error = $"Exceeded set maximum macro recusion depth of {opt.maxDepth}";
                                 return false;
                             }
                             child.processMacro = false;
@@ -168,10 +174,9 @@ namespace NgAssmblCore
                 string[] arguments = linews.Split(' ');
                 for (int i = 1; i < arguments.Length; i++)
                     stack.Add(arguments[i]);
-                if (!instancer.Generate(stack, out string[] code, out error))
+                if (!instancer.Generate(stack, line, out List<Line> children, /*out _,*/ out error))
                     return false;
-                foreach (var item in code)
-                    output.Add(new Line(item, line.number, line.depth + 1, macros));
+                output.AddRange(children);
             }
             return true;
         }

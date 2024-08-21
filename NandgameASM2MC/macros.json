@@ -131,19 +131,19 @@
             "placeholders": [ "index" ],
             "leaf": false,
             "code": "POP_STATIC TMP\nPUSH_STATIC LOCALS\nPUSH_VALUE index\nADD\nPUSH_STATIC TMP\nPOP_MEMORY"
-        },
-        // NOT REAL REMOVE
-        "GOTOX": {
-            "placeholders": [ "arg1" ],
-            "leaf": false,
-            "code": "GOTO arg1"
-        },
-        // NOT REAL REMOVE
-        "CALLX": {
-            "placeholders": [ "index" ],
-            "labels": [ "othersp" ],
-            "leaf": false,
-            "code": "othersp:\nA = TMP\nA = 1\nD = index\nGOTOX othersp"
-        }
+        }//,
+        //// NOT REAL REMOVE
+        //"GOTOX": {
+        //    "placeholders": [ "arg1" ],
+        //    "leaf": false,
+        //    "code": "GOTO arg1"
+        //},
+        //// NOT REAL REMOVE
+        //"CALLX": {
+        //    "placeholders": [ "index" ],
+        //    "labels": [ "othersp" ],
+        //    "leaf": false,
+        //    "code": "othersp:\nA = TMP\nA = 1\nD = index\nGOTOX othersp"
+        //}
     }
 }
